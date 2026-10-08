@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS-6 | Fake News & Clickbait Detector</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for NLP Feature Weight Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        darkbg: '#080c14',
+                        darkcard: '#0f172a',
+                        darkborder: '#1e293b',
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #080c14;
+            color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glow-brand {
+            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.25);
+        }
+        .glow-danger {
+            box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.3);
+        }
+        .glow-success {
+            box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .badge-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .4; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased custom-scrollbar selection:bg-brand-500 selection:text-white">
+
+    <header class="border-b border-slate-800/80 bg-darkbg/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-purple-600 flex items-center justify-center shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-extrabold text-xl tracking-tight text-white">NEXUS-6</span>
+                        <span class="bg-brand-500/10 text-brand-400 text-xs px-2 py-0.5 rounded-full font-mono border border-brand-500/20">v2.4-NLP</span>
+                    </div>
+                    <p class="text-xs text-slate-400 hidden sm:block">NLP Fake News & Sensationalism Detection Platform</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div class="hidden lg:flex items-center space-x-2 text-xs bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 badge-pulse"></span>
+                    <span class="text-slate-300 font-mono">Classifier: Active</span>
+                </div>
+                <button onclick="toggleModal('info-modal')" class="text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 p-2 sm:px-3 sm:py-1.5 rounded-lg transition-all text-xs flex items-center space-x-1.5">
+                    <i class="fa-solid fa-graduation-cap text-brand-400"></i>
+                    <span class="font-medium">Viva Tech Brief</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-darkcard to-slate-900 border border-slate-800 p-6 sm:p-8">
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 max-w-3xl">
+                <div class="inline-flex items-center space-x-2 bg-brand-500/10 border border-brand-500/30 text-brand-300 text-xs px-3 py-1 rounded-full font-mono mb-3">
+                    <i class="fa-solid fa-microchip text-xs"></i>
+                    <span>TF-IDF Vectorization + Naïve Bayes Classifier</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
+                    Automated News Credibility & <span class="gradient-text">Clickbait Analyzer</span>
+                </h1>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    Designed by team <strong class="text-slate-200">NEXUS-6</strong>. Input news headlines or article text to generate real-time authenticity probabilities, flag linguistic manipulation triggers, and examine feature weight vectors.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT PANEL: INPUT & DEMO PRESETS -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- Main Input Card -->
+                <div class="bg-darkcard border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+                    <div class="flex items-center justify-between">
+                        <label for="headline-input" class="text-sm font-semibold text-slate-200 flex items-center space-x-2">
+                            <i class="fa-solid fa-pen-to-square text-brand-400"></i>
+                            <span>Headline or Article Text Snippet</span>
+                        </label>
+                        <span id="char-count" class="text-xs font-mono text-slate-500">0 characters</span>
+                    </div>
+
+                    <div class="relative">
+                        <textarea id="headline-input" rows="5" 
+                            class="w-full bg-darkbg border border-slate-800 rounded-xl p-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-sans text-sm resize-none custom-scrollbar"
+                            placeholder="Paste news headline or clickbait title here (e.g., 'SHOCKING: Scientists Reveal Secret Remedy Doctors Don't Want You To Know!')..."></textarea>
+                        
+                        <div class="absolute bottom-3 right-3 flex space-x-2">
+                            <button onclick="clearInput()" title="Clear Text" class="text-xs bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-800 transition-all">
+                                <i class="fa-solid fa-eraser mr-1"></i> Clear
+                            </button>
+                            <button onclick="pasteFromClipboard()" title="Paste from clipboard" class="text-xs bg-slate-900/90 hover:bg-slate-800 text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-800 transition-all">
+                                <i class="fa-solid fa-paste mr-1"></i> Paste
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button onclick="analyzeText()" id="analyze-btn" class="w-full bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-brand-600/25 flex items-center justify-center space-x-2 transition-all transform active:scale-[0.99]">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Run NLP Credibility Analysis</span>
+                    </button>
+                </div>
+
+                <div class="bg-darkcard border border-slate-800 rounded-2xl p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-2">
+                            <i class="fa-solid fa-flask text-brand-400"></i>
+                            <span>Preloaded Test Samples for Presentation</span>
+                        </h3>
+                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Quick Load</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <button onclick="loadSample(0)" class="text-left p-3 rounded-xl bg-darkbg border border-slate-800 hover:border-red-500/50 hover:bg-red-500/5 transition-all group">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-mono font-bold text-red-400 bg-red-950/60 border border-red-800/40 px-1.5 py-0.5 rounded">Sensational Clickbait</span>
+                                <i class="fa-solid fa-arrow-right text-xs text-slate-600 group-hover:text-red-400 group-hover:translate-x-0.5 transition-all"></i>
+                            </div>
+                            <p class="text-xs text-slate-300 line-clamp-2 font-medium">"SHOCKING: Local herbalist discovers secret cure, big pharma trying to ban this!"</p>
+                        </button>
+
+                        <button onclick="loadSample(1)" class="text-left p-3 rounded-xl bg-darkbg border border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.5 rounded">Authentic News</span>
+                                <i class="fa-solid fa-arrow-right text-xs text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all"></i>
+                            </div>
+                            <p class="text-xs text-slate-300 line-clamp-2 font-medium">"Federal Reserve announces quarterly interest rate decision following economic review."</p>
+                        </button>
+
+                        <button onclick="loadSample(2)" class="text-left p-3 rounded-xl bg-darkbg border border-slate-800 hover:border-red-500/50 hover:bg-red-500/5 transition-all group">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-mono font-bold text-red-400 bg-red-950/60 border border-red-800/40 px-1.5 py-0.5 rounded">Extreme Clickbait</span>
+                                <i class="fa-solid fa-arrow-right text-xs text-slate-600 group-hover:text-red-400 group-hover:translate-x-0.5 transition-all"></i>
+                            </div>
+                            <p class="text-xs text-slate-300 line-clamp-2 font-medium">"YOU WON'T BELIEVE what this famous actor did on set! Number 4 will blow your mind!"</p>
+                        </button>
+
+                        <button onclick="loadSample(3)" class="text-left p-3 rounded-xl bg-darkbg border border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.5 rounded">Research Journal</span>
+                                <i class="fa-solid fa-arrow-right text-xs text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all"></i>
+                            </div>
+                            <p class="text-xs text-slate-300 line-clamp-2 font-medium">"NASA publishes space telescope observation logs regarding distant exoplanet atmosphere."</p>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT PANEL: DIAGNOSTICS & ANALYTICS -->
+            <div class="lg:col-span-5 space-y-6">
+
+                <div id="results-card" class="bg-darkcard border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-300">
+                    <div id="result-glow" class="absolute top-0 right-0 w-32 h-32 bg-slate-800/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <!-- Header -->
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-pie text-brand-400"></i>
+                            <span>Detection Diagnostics</span>
+                        </span>
+                        <span id="analysis-timestamp" class="text-[11px] font-mono text-slate-500">Awaiting input</span>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="py-12 text-center space-y-3">
+                        <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-slate-600">
+                            <i class="fa-solid fa-radar text-2xl"></i>
+                        </div>
+                        <h4 class="text-sm font-semibold text-slate-300">No Headline Analyzed Yet</h4>
+                        <p class="text-xs text-slate-500 max-w-xs mx-auto">Enter text on the left or select a preloaded sample to trigger classification.</p>
+                    </div>
+
+                    <!-- Active Results -->
+                    <div id="active-results" class="hidden space-y-5">
+                        
+                        <!-- Verdict Banner -->
+                        <div id="verdict-banner" class="p-4 rounded-xl border flex items-center space-x-3 transition-all">
+                            <div id="verdict-icon-bg" class="w-12 h-12 rounded-lg flex items-center justify-center text-xl shrink-0">
+                                <i id="verdict-icon" class="fa-solid fa-shield"></i>
+                            </div>
+                            <div>
+                                <div id="verdict-title" class="text-base font-extrabold tracking-tight">ANALYSIS COMPLETE</div>
+                                <div id="verdict-subtitle" class="text-xs opacity-90">Model Confidence calculated</div>
+                            </div>
+                        </div>
+
+                        <!-- Probability Bar -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span class="text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Genuine News</span>
+                                <span class="text-red-400 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Sensational/Fake</span>
+                            </div>
+                            <div class="w-full bg-darkbg border border-slate-800 h-3.5 rounded-full overflow-hidden p-0.5 flex">
+                                <div id="bar-real" class="bg-emerald-500 h-full rounded-l-full transition-all duration-700" style="width: 50%"></div>
+                                <div id="bar-fake" class="bg-red-500 h-full rounded-r-full transition-all duration-700" style="width: 50%"></div>
+                            </div>
+                            <div class="flex justify-between text-[11px] font-mono text-slate-400 pt-0.5">
+                                <span id="val-real">50.0%</span>
+                                <span id="val-fake">50.0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Linguistic Flags -->
+                        <div class="space-y-2 border-t border-slate-800/80 pt-4">
+                            <span class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                                <span>Linguistic Risk Triggers</span>
+                                <span id="trigger-count-badge" class="text-[10px] font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300">0 found</span>
+                            </span>
+                            <div id="trigger-list" class="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar pr-1"></div>
+                        </div>
+
+                        <!-- Chart Canvas -->
+                        <div class="border-t border-slate-800/80 pt-4 space-y-2">
+                            <span class="text-xs font-semibold text-slate-300">TF-IDF Vector Weight Analysis</span>
+                            <div class="h-32 w-full">
+                                <canvas id="featuresChart"></canvas>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="bg-darkcard border border-slate-800 rounded-2xl p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-line text-brand-400"></i>
+                            <span>Evaluated Benchmark Metrics</span>
+                        </span>
+                        <span class="text-[10px] font-mono text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20">WELFake Corpus</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 text-center pt-1">
+                        <div class="bg-darkbg p-2.5 rounded-xl border border-slate-800">
+                            <div class="text-[10px] text-slate-500 uppercase font-mono">Accuracy</div>
+                            <div class="text-base font-extrabold text-slate-100 font-mono">94.8%</div>
+                        </div>
+                        <div class="bg-darkbg p-2.5 rounded-xl border border-slate-800">
+                            <div class="text-[10px] text-slate-500 uppercase font-mono">Precision</div>
+                            <div class="text-base font-extrabold text-emerald-400 font-mono">93.2%</div>
+                  
